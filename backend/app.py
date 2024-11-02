@@ -6,6 +6,7 @@ from resources.users import users_bp
 from resources.devices import devices_bp
 from resources.returns import returns_bp
 from resources.rentals import rentals_bp
+from auth.auth_routes import auth_bp
 import logging
 logging.basicConfig(level=logging.DEBUG) # 요청이 제대로 전달되고 있는지 확인
 
@@ -26,7 +27,7 @@ app.register_blueprint(users_bp, url_prefix='/users')
 app.register_blueprint(devices_bp, url_prefix='/devices')
 app.register_blueprint(returns_bp, url_prefix='/returns')
 app.register_blueprint(rentals_bp, url_prefix='/rentals')
-
+app.register_blueprint(auth_bp, url_prefix='/auth')
 
 # Flask 서버 실행
 if __name__ == '__main__':

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mulos/constants/app_colors.dart';
-
 import 'constants/app_prefs_keys.dart';
 import 'constants/app_router.dart';
 import 'service/preference_service.dart';
