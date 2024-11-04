@@ -1,8 +1,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:get/get.dart';
+
 
 class ApiService {
   static const String baseUrl = 'http://3.39.184.195:5000';
+  final ImagePicker _picker = ImagePicker();
+  Rx<File?> selectedImage = Rx<File?>(null);
 
   // 공통 API 요청 함수
   Future<dynamic> apiFetch(String endpoint, String method,
@@ -63,8 +69,22 @@ class ApiService {
   }
 
   // 유저 등록 API 호출 함수
-  Future<dynamic> registerUser(Map<String, dynamic> userData) {
-    return apiFetch('/users', 'POST', data: userData);
+  Future<bool> registerUser(Map<String, dynamic> userData)async {
+
+    try {
+      final response = await apiFetch('/auth/signup', 'POST', data: userData);
+      print(userData);
+
+      // 서버 응답이 성공 메시지를 포함할 때 true 반환
+      if (response != null && response['message'] == 'User registered successfully') {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      print("Error in registerUser: $error");
+      return false;
+    }
   }
 
   // Device API
@@ -96,4 +116,35 @@ class ApiService {
       return false;
     }
   }
+
+  // 갤러리 이미지 받아오기
+  Future<void> pickImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      selectedImage.value = File(image.path);
+    }
+  }
+
+  //서버에 이미지 업로드하고 url받아오기
+  Future<String?> uploadImage(File image) async {
+    final url = Uri.parse('$baseUrl/upload'); // 서버의 업로드 엔드포인트
+    final request = http.MultipartRequest('POST', url)
+      ..files.add(await http.MultipartFile.fromPath('image', image.path));
+
+    final response = await request.send();
+
+    if (response.statusCode == 200) {
+      final responseBody = await response.stream.bytesToString();
+      final jsonResponse = jsonDecode(responseBody);
+      final photoUrl = jsonResponse['photo_url'];
+
+      print('Uploaded photo URL: $photoUrl'); // photo_url 출력
+      return photoUrl;
+    } else {
+      print('Image upload failed: ${response.statusCode}');
+      return null;
+    }
+  }
+
 }
+

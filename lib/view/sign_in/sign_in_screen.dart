@@ -24,7 +24,7 @@ class SignInScreen extends StatelessWidget {
             Image.asset("assets/image/app_icon.png"),
             TextField(
               textInputAction: TextInputAction.done,
-              keyboardType: TextInputType.number,
+              keyboardType: TextInputType.text,// 영문도 입력 가능하게 변경 (11.03)
               controller: controller.idTextController,
               decoration: InputDecoration(
                 hintText: "학번",

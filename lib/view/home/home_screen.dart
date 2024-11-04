@@ -1,21 +1,20 @@
 import 'dart:async';
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mulos/constants/app_colors.dart';
 import 'package:mulos/constants/app_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-
 import '../../constants/app_prefs_keys.dart';
 import '../../service/preference_service.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-
     final controller = Get.put(HomeController());
     final shortestSide = MediaQuery.of(context).size.shortestSide;
 
@@ -46,32 +45,30 @@ class HomeScreen extends StatelessWidget {
                       child: Column(
                         children: [
                           Text("좌석 현황"),
-
                           Obx(() => Text("모니터석 : ${controller.monitorCount.value}/${controller.monitorTotalCount.value}"),),
                           Obx(() => Text("데스크탑 : ${controller.desktopCount.value}/${controller.desktopTotalCount.value}"),),
                           Obx(() => Text("그룹학습 : ${controller.groupStudyCount.value}/${controller.groupStudyTotalCount.value}"),),
+                          Obx(() => Text("인원수 : ${controller.personCount.value}/${controller.personTotalCount.value}"),),
                         ],
                       ),
                     ),
                     const SizedBox(height: 20,),
                     Obx(() {
-
-                      var total = controller.monitorTotalCount.value + controller.desktopTotalCount.value + controller.groupStudyTotalCount.value;
-                      var count = controller.monitorCount.value + controller.desktopCount.value + controller.groupStudyCount.value;
-                      var percent = count / total;
-
                       return Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: percent <= 0.333 ? Colors.green : percent >= 0.666 ? Colors.red : Colors.yellow
+                          shape: BoxShape.circle,
+                          color: controller.congestionStatusColor.value, // .value 추가
                         ),
-                        child: Text(percent <= 0.333 ? "원활" : percent >= 0.666 ? "혼잡" : "보통", style: const TextStyle(color: Colors.white),),
+                        child: Text(
+                          controller.congestionStatus.value, // .value 추가
+                          style: const TextStyle(color: Colors.white),
+                        ),
                       );
-                    },),
+                    }),
                   ],
                 );
-              }else {
+              } else {
                 return Column(
                   children: [
                     Expanded(
@@ -101,7 +98,6 @@ class HomeScreen extends StatelessWidget {
             },),
           ),
           const SizedBox(height: 80,),
-
           Container(
             padding: EdgeInsets.only(top: 10),
             decoration: const BoxDecoration(
@@ -172,28 +168,26 @@ class HomeScreen extends StatelessWidget {
               ],
             ),
           )
-
         ],
       ),
     );
   }
-
 }
 
-
 class HomeController extends GetxController{
-
   var qrData = (-1).obs;
   RxInt remainingSeconds = 30.obs;
   Timer? timer;
   RxInt monitorCount = 0.obs;
   RxInt desktopCount = 0.obs;
   RxInt groupStudyCount = 0.obs;
+  RxInt personCount = 0.obs;
   RxInt monitorTotalCount = 0.obs;
   RxInt desktopTotalCount = 0.obs;
   RxInt groupStudyTotalCount = 0.obs;
-
-
+  RxInt personTotalCount = 0.obs;
+  var congestionStatus = '보통'.obs;
+  var congestionStatusColor = Colors.yellow.obs;
 
   @override
   void onInit() {
@@ -203,8 +197,29 @@ class HomeController extends GetxController{
     monitorTotalCount.value = AppPreferences().prefs?.getInt(AppPrefsKeys.monitorTotalCount) ?? 0;
     desktopTotalCount.value = AppPreferences().prefs?.getInt(AppPrefsKeys.desktopTotalCount) ?? 0;
     groupStudyTotalCount.value = AppPreferences().prefs?.getInt(AppPrefsKeys.groupStudyTotalCount) ?? 0;
+    fetchCongestionData();
     super.onInit();
   }
+
+  Future<void> fetchCongestionData() async {
+    try {
+      final response = await http.get(Uri.parse('http://3.39.184.195:5000/congestion'));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        personCount.value = data['person_count'];
+        personTotalCount.value = data['person_total_count'];
+        congestionStatus.value = data['congestion_status'];
+        congestionStatusColor.value = congestionStatus.value == '쾌적'
+            ? Colors.green
+            : congestionStatus.value == '혼잡'
+            ? Colors.red
+            : Colors.yellow;
+      }
+    } catch (e) {
+      print("Failed to fetch congestion data: $e");
+    }
+  }
+  
 
   void startTimer() {
     refreshQr();
@@ -216,7 +231,7 @@ class HomeController extends GetxController{
         remainingSeconds.value--;
       } else {
         refreshQr();
-        remainingSeconds.value = 30; // 30초 초기화
+        remainingSeconds.value = 30;
       }
     });
   }
@@ -233,9 +248,7 @@ class HomeController extends GetxController{
 
   @override
   void onClose() {
-    timer?.cancel(); // 컨트롤러가 종료될 때 타이머 취소
+    timer?.cancel();
     super.onClose();
   }
-
-
 }

@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import '../../service/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
@@ -52,8 +52,16 @@ class AcademicRecordScreen extends StatelessWidget {
                     controller.pickImage();
                     return;
                   }
-                  await AppPreferences().prefs?.setBool(AppPrefsKeys.isLoginUser, true) ?? false;
+                  // 이미지를 선택한 후 회원가입을 완료하도록 수정
+                  await controller.completeSignUp(); // 회원가입 완료 함수 호출
+
+                  // 회원가입이 완료된 후 홈 화면으로 이동
+                  await AppPreferences().prefs?.setBool(AppPrefsKeys.isLoginUser, true);
                   Get.offNamedUntil(AppRouter.home, (route) => false);
+
+                  // await AppPreferences().prefs?.setBool(AppPrefsKeys.isLoginUser, true) ?? false;
+                  // Get.offNamedUntil(AppRouter.home, (route) => false);
+
                 }, child: Text("${controller.selectedImage.value == null ? "갤러리에서 탐색하기" : "가입 완료"}"));
               },)
             ],
@@ -67,25 +75,90 @@ class AcademicRecordScreen extends StatelessWidget {
 
 
 class AcademicRecordController extends GetxController{
+  final ApiService apiService = ApiService();
+  Rx<File?> selectedImage = Rx<File?>(null);
 
+  String? studentId;
+  String? password;
 
-  var selectedImage = Rx<XFile?>(null);
-
+  void setUserInfo(String id, String pw) {
+    studentId = id;
+    password = pw;
+  }
 
 
   Future<void> pickImage() async {
+    await apiService.pickImage();
+    selectedImage.value = apiService.selectedImage.value;
+  }
 
-    try{
-      var selectedXfile = await ImagePicker().pickImage(source: ImageSource.gallery);
-
-      if(selectedXfile != null){
-        selectedImage.value = selectedXfile;
+/*
+  Future<void> completeSignUp() async {
+    print("completeSignUp 호출"); // 확인용 로그 추가
+    if (studentId != null && password != null) {
+      print("회원가입 요청 중..."); // 요청 전 로그 추가
+      String? photoUrl = await apiService.uploadImage(selectedImage.value!);
+      if (photoUrl != null) {
+        await apiService.registerUserWithPhoto(studentId!, password!, photoUrl);
+        Fluttertoast.showToast(msg: "회원가입이 완료되었습니다.");
+        Get.offNamed('/home');
+      } else {
+        Fluttertoast.showToast(msg: "이미지 업로드 실패");
       }
-
-    }catch (e){
-      Fluttertoast.showToast(msg: "Exception occured! ::: $e");
+    } else {
+      Fluttertoast.showToast(msg: "회원 정보를 확인해주세요.");
     }
+  }
+*/
+  Future<void> completeSignUp() async {
+    print("completeSignUp 호출"); // 확인용 로그 추가
+    if (studentId != null && password != null) {
+      //String? photoUrl;
+      String photoUrl = "example@example.com";
+      int role = 1;                 // 기본값 설정
+      String email = "test@example.com";       // 기본값 설정
+      String name = "Test User";               // 기본값 설정
+      String professor = "Prof";          // 기본값 설정
 
+      // 회원가입 API 호출
+      final userData = {
+        'student_id': studentId,
+        'role': role,
+        'email': email,
+        'name': name,
+        'photo_url': photoUrl,
+        'professor': professor,
+        'password': password
+      };
+      print("userData to be sent: $userData"); // userData 로그 출력
+
+      final isRegistered = await apiService.registerUser(userData);
+      print("isRegistered: $isRegistered"); // 로그 추가
+
+      /*
+      // selectedImage가 있을 경우에만 이미지 업로드
+      if (selectedImage.value != null) {
+        photoUrl = await apiService.uploadImage(selectedImage.value!);
+        if (photoUrl == null) {
+          Fluttertoast.showToast(msg: "이미지 업로드 실패");
+          return; // 이미지 업로드 실패 시 함수 종료
+        }
+      } else {
+        photoUrl = null; // 이미지가 없으면 photoUrl을 null로 설정
+      }
+      */
+
+      // 회원가입 API 호출
+      if (isRegistered) {
+
+        Fluttertoast.showToast(msg: "회원가입이 완료되었습니다.");
+        Get.offNamed('/home');
+      } else {
+        Fluttertoast.showToast(msg: "회원가입 실패");
+      }
+    } else {
+      Fluttertoast.showToast(msg: "회원 정보를 확인해주세요.");
+    }
   }
 
 }
