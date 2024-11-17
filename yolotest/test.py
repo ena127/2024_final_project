@@ -38,6 +38,8 @@ else:
 
         # 프레임 처리
         frame_count = 0
+        update_interval = 50  # 예를 들어, 매 10 프레임마다 전송
+
 
         # Define maximum capacity for congestion ratio calculation
         max_capacity = 60  # 최대 수용 인원 (예시로 60명을 설정)
@@ -53,16 +55,17 @@ else:
 
             # Calculate congestion ratio based on person count
             congestion_ratio = person_count / max_capacity
+            if frame_count % update_interval == 0:
 
-            # Send the person count and congestion ratio to the Flask API
-            try:
-                response = requests.post(flask_api_url, json={'person_count': person_count, 'congestion_ratio': congestion_ratio})
-                if response.status_code == 201:
-                    print(f"Frame {frame_count}: Saved person count {person_count} and congestion ratio {congestion_ratio:.2f} to congestion table.")
-                else:
-                    print(f"Failed to save person count for frame {frame_count}: {response.text}")
-            except requests.exceptions.RequestException as e:
-                print(f"Failed to connect to API for frame {frame_count}: {e}")
+                # Send the person count and congestion ratio to the Flask API
+                try:
+                    response = requests.post(flask_api_url, json={'person_count': person_count, 'congestion_ratio': congestion_ratio})
+                    if response.status_code == 201:
+                        print(f"Frame {frame_count}: Saved person count {person_count} and congestion ratio {congestion_ratio:.2f} to congestion table.")
+                    else:
+                        print(f"Failed to save person count for frame {frame_count}: {response.text}")
+                except requests.exceptions.RequestException as e:
+                    print(f"Failed to connect to API for frame {frame_count}: {e}")
 
             # 탐지 결과를 프레임에 주석 추가
             annotated_frame = results[0].plot()

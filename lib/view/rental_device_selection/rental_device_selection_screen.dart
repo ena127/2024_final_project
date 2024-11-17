@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:mulos/constants/app_router.dart';
-
 import '../../constants/app_colors.dart';
+import 'package:mulos/service/api_service.dart';
 
 class RentalDeviceSelectionScreen extends StatelessWidget {
   const RentalDeviceSelectionScreen({super.key});
@@ -107,9 +107,15 @@ class RentalDeviceSelectionScreen extends StatelessWidget {
 
 
 class RentalDeviceSelectionController extends GetxController{
-
-  var deviceList = <String>["LG 그램", "Samsung 갤럭시북","한성 올데이롱","LG 그램", "Samsung 갤럭시북","한성 올데이롱","LG 그램", "Samsung 갤럭시북","한성 올데이롱","LG 그램", "Samsung 갤럭시북","한성 올데이롱","LG 그램", "Samsung 갤럭시북","한성 올데이롱","LG 그램", "Samsung 갤럭시북","한성 올데이롱","LG 그램", "Samsung 갤럭시북","한성 올데이롱","LG 그램", "Samsung 갤럭시북","한성 올데이롱"];
+  var deviceList = <String>[].obs;
   RxList selectedDevicesIndex = <int>[].obs;
+  final ApiService apiService = ApiService();
+
+  @override
+  void onInit() {
+  super.onInit();
+  loadDeviceModels();
+  }
 
   void finishSelection () {
     if(selectedDevicesIndex.isEmpty){
@@ -122,5 +128,17 @@ class RentalDeviceSelectionController extends GetxController{
       "deviceCategory" : "Windows 노트북",
     });
   }
+  Future<void> loadDeviceModels() async {
+    try {
+      // fetchDeviceModels()에서 중복을 제거하여 deviceList에 저장
+      List<String> models = await apiService.fetchDeviceModels();
+      deviceList.value = models.toSet().toList();  // 중복 제거
+      print("Device List Loaded: ${deviceList.value}");
+    } catch (e) {
+      Fluttertoast.showToast(msg: "기기 목록을 불러오는 데 실패했습니다.");
+      print("Error loading device models: $e");
+    }
+  }
+
 
 }

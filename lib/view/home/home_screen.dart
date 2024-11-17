@@ -185,7 +185,7 @@ class HomeController extends GetxController{
   RxInt monitorTotalCount = 0.obs;
   RxInt desktopTotalCount = 0.obs;
   RxInt groupStudyTotalCount = 0.obs;
-  RxInt personTotalCount = 0.obs;
+  RxInt personTotalCount = 60.obs;
   var congestionStatus = '보통'.obs;
   var congestionStatusColor = Colors.yellow.obs;
 
@@ -219,7 +219,7 @@ class HomeController extends GetxController{
       print("Failed to fetch congestion data: $e");
     }
   }
-  
+
 
   void startTimer() {
     refreshQr();

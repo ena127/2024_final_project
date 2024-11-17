@@ -70,7 +70,8 @@ class ApiService {
 
   // 유저 등록 API 호출 함수
   Future<bool> registerUser(Map<String, dynamic> userData)async {
-
+    print("registerUser 호출됨"); // 디버깅 로그 추가
+    print("전송할 데이터: $userData");
     try {
       final response = await apiFetch('/auth/signup', 'POST', data: userData);
       print(userData);
@@ -95,6 +96,22 @@ class ApiService {
   Future<dynamic> registerDevice(Map<String, dynamic> deviceData) {
     return apiFetch('/devices', 'POST', data: deviceData);
   }
+
+  // 기기 목록 가져오기
+  Future<List<String>> fetchDeviceModels() async {
+    try {
+      final response = await apiFetch('/devices', 'GET');
+      if (response != null && response is List) {
+        return response.map<String>((device) => device['model'] as String).toList();
+      } else {
+        throw Exception('Failed to parse devices data');
+      }
+    } catch (error) {
+      print("Error fetching devices: $error");
+      return [];
+    }
+  }
+
 
   // 로그인 API 호출 함수
   Future<bool> isLoginUser(String studentId, String password) async {
